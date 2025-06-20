@@ -1,0 +1,16 @@
+{
+  "name": "mapa-ambiental-js",
+  "version": "1.0.0",
+  "main": "app.js",
+  "type": "module",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "sequelize": "^6.32.1",
+    "mysql2": "^3.9.7",
+    "dotenv": "^16.3.1",
+    "cors": "^2.8.5"
+  }
+} 

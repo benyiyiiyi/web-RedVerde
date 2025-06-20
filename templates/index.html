@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa Ambiental Chile</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #1B4D3E; /* Verde bosque chileno */
+            --secondary-color: #D4AF37; /* Dorado */
+            --accent-color: #2E8B57; /* Verde mar */
+            --background-color: #F5F5F5;
+            --text-color: #333;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+        }
+
+        .header {
+            background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+                        url('https://images.unsplash.com/photo-1516026672322-36c2e8284471?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
+            background-size: cover;
+            background-position: center;
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+            position: relative;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 10px;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .header p {
+            margin: 1rem 0 0;
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        #map {
+            height: 70vh;
+            width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin: 20px 0;
+        }
+
+        .form-container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-top: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid var(--primary-color);
+        }
+
+        .form-container h2 {
+            color: var(--primary-color);
+            margin-top: 0;
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-family: 'Montserrat', sans-serif;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus, textarea:focus {
+            border-color: var(--accent-color);
+            outline: none;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: var(--accent-color);
+        }
+
+        .report-popup {
+            max-width: 300px;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .report-popup h3 {
+            color: var(--primary-color);
+            margin-top: 0;
+        }
+
+        .location-hint {
+            background-color: #E8F5E9;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .chile-icon {
+            width: 30px;
+            height: 30px;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        .footer {
+            background-color: var(--primary-color);
+            color: white;
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+        }
+
+        .footer p {
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        /* Estilo para los marcadores del mapa */
+        .custom-marker {
+            background-color: var(--primary-color);
+            border: 2px solid white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Mapa Ambiental Chile</h1>
+        <p>Reporta y visualiza problemas ambientales en tu comunidad</p>
+    </div>
+
+    <div class="container">
+        <div id="map"></div>
+        <div class="form-container">
+            <h2>Reportar un Problema Ambiental</h2>
+            <form id="reportForm">
+                <div class="form-group">
+                    <label for="title">Título del Reporte:</label>
+                    <input type="text" id="title" required placeholder="Ej: Acumulación de basura en playa">
+                </div>
+                <div class="form-group">
+                    <label for="description">Descripción:</label>
+                    <textarea id="description" rows="4" required placeholder="Describe el problema ambiental que has observado..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Ubicación:</label>
+                    <div class="location-hint">
+                        Haz clic en el mapa para seleccionar la ubicación exacta del problema
+                    </div>
+                    <input type="hidden" id="latitude">
+                    <input type="hidden" id="longitude">
+                </div>
+                <button type="submit">Enviar Reporte</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>© 2024 Mapa Ambiental Chile - Contribuyendo a un Chile más limpio y sostenible</p>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        // Inicializar el mapa centrado en Chile
+        const map = L.map('map').setView([-33.4489, -70.6693], 6); // Coordenadas de Santiago
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        let selectedLocation = null;
+        let marker = null;
+
+        // Manejar clic en el mapa
+        map.on('click', function(e) {
+            if (marker) {
+                map.removeLayer(marker);
+            }
+            marker = L.marker(e.latlng, {
+                icon: L.divIcon({
+                    className: 'custom-marker',
+                    html: '<div style="background-color: var(--primary-color); border: 2px solid white; border-radius: 50%; width: 20px; height: 20px;"></div>'
+                })
+            }).addTo(map);
+            selectedLocation = e.latlng;
+            document.getElementById('latitude').value = e.latlng.lat;
+            document.getElementById('longitude').value = e.latlng.lng;
+        });
+
+        // Cargar reportes existentes
+        fetch('/get_reports')
+            .then(response => response.json())
+            .then(reports => {
+                reports.forEach(report => {
+                    const popup = L.popup()
+                        .setContent(`
+                            <div class="report-popup">
+                                <h3>${report.title}</h3>
+                                <p>${report.description}</p>
+                                <small>Reportado: ${new Date(report.created_at).toLocaleDateString()}</small>
+                            </div>
+                        `);
+                    L.marker([report.latitude, report.longitude], {
+                        icon: L.divIcon({
+                            className: 'custom-marker',
+                            html: '<div style="background-color: var(--primary-color); border: 2px solid white; border-radius: 50%; width: 20px; height: 20px;"></div>'
+                        })
+                    })
+                    .bindPopup(popup)
+                    .addTo(map);
+                });
+            });
+
+        // Manejar envío del formulario
+        document.getElementById('reportForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (!selectedLocation) {
+                alert('Por favor, selecciona una ubicación en el mapa');
+                return;
+            }
+
+            const reportData = {
+                title: document.getElementById('title').value,
+                description: document.getElementById('description').value,
+                latitude: selectedLocation.lat,
+                longitude: selectedLocation.lng
+            };
+
+            fetch('/submit_report', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(reportData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    console.error('Error completo:', data);
+                    alert('Error al enviar el reporte: ' + data.error);
+                } else {
+                    alert('Reporte enviado exitosamente');
+                    location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al enviar el reporte: ' + error.message);
+            });
+        });
+    </script>
+</body>
+</html> 
